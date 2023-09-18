@@ -1,0 +1,10 @@
+ *** caught segfault ***
+address 0x55a4b3cd8f40, cause 'memory not mapped'
+
+Traceback:
+ 1: order(c(NA_integer_, NA_integer_), na.last = TRUE, decreasing = FALSE)
+ 2: do.call("order", c(z, na.last = na.last, decreasing = decreasing))
+ 3: order(factor(chrs, levels = c(1:22, "X", "Y")))
+ 4: summarize_rearrangements(ucsc.table, candidate.intervals, reads.large_insert,     reads.softclipped)
+aborting ...
+Segmentation fault (core dumped)
