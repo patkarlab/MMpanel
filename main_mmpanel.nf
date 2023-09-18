@@ -583,14 +583,16 @@ process gridss {
 }
 
 process svaba {
-	publishDir "$PWD/Final_Output/${Sample}/", mode: 'copy', pattern: '*svaba*'
+	publishDir "$PWD/Final_Output/${Sample}/svaba/", mode: 'copy', pattern: '*svaba*'
 	input:
 		tuple val (Sample),	file (bamFile), file(bamBai)
 	output:
-		tuple val (Sample), file ("*")
+		tuple val (Sample), file ("${Sample}_svaba.svaba.sv.vcf")
 	script:
 	"""
-	{params.svaba_path} run -t ${bamFile} -G ${params.genome} -p 30 -k ${params.trans_bedfile}.bed -D ${params.site2} -a ./
+	${params.svaba_path} run -t ${bamFile} -G ${params.genome} -p 30 -k ${params.trans_bedfile}.bed -D ${params.site2} -a ${Sample}_svaba
+	${params.samtools} sort ${Sample}_svaba.contigs.bam -o ${Sample}_svaba.sortd.bam
+	${params.samtools} index ${Sample}_svaba.sortd.bam
 	"""
 }
 
@@ -598,11 +600,26 @@ process lumpy {
 	input:
 		val Sample
 	output:
-		tuple val (Sample), file("*vcf")
+		tuple val (Sample), file("${Sample}.vcf")
 	script:
 	"""
 	${params.sudo_path}/speedseq align -R "@RG\tID:id\tSM:${Sample}\tLB:lib" ${params.genome} ${params.sequences}/${Sample}_*R1_*.fastq.gz ${params.sequences}/${Sample}_*R2_*.fastq.gz -o ${Sample} 
 	${params.sudo_path}/lumpyexpress -B ${Sample}_S*_R1_001.fastq.gz.bam -S ${Sample}_S*_R1_001.fastq.gz.splitters.bam -D ${Sample}_S*_R1_001.fastq.gz.discordants.bam -o ${Sample}.vcf
+	"""
+}
+
+process translocatn {
+	publishDir "$PWD/Final_Output/${Sample}/", mode: 'copy', pattern: '*translocatns*'	
+	input:
+		tuple val (Sample), file (svaba_vcf), file (lumpy_vcf)
+	output:
+		tuple val (Sample), file ("*")
+	script:
+	"""
+	${params.svaba_lumpy_common} ${svaba_vcf} ${lumpy_vcf} ${Sample}_common
+	svaba_file=\$(basename ${svaba_vcf} .vcf)
+	lumpy_file=\$(basename ${lumpy_vcf} .vcf)
+	cat \${svaba_file}.tsv \${lumpy_file}.tsv ${Sample}_common > ${Sample}_translocatns.tsv 
 	"""
 }
 
@@ -645,7 +662,7 @@ workflow MIPS {
 	IndelRealigner(RealignerTargetCreator.out.join(sam_conversion.out)) | BaseRecalibrator
 	PrintReads(IndelRealigner.out.join(BaseRecalibrator.out)) | generatefinalbam
 	hsmetrics_run(generatefinalbam.out)
-	//InsertSizeMetrics(generatefinalbam.out)
+	InsertSizeMetrics(sam_conver_unpaired.out)
 	platypus_run(generatefinalbam.out)
 	coverage(generatefinalbam.out)
 	freebayes_run(generatefinalbam.out)
@@ -655,8 +672,9 @@ workflow MIPS {
 	lofreq_run(generatefinalbam.out)
 	strelka_run(generatefinalbam.out)
 	//gridss(generatefinalbam.out)
-	//svaba(sam_conver_unpaired)
+	svaba(sam_conver_unpaired.out)
 	lumpy(samples_ch)
+	translocatn(svaba.out.join(lumpy.out))
 	somaticSeq_run(freebayes_run.out.join(platypus_run.out.join(mutect2_run.out.join(vardict_run.out.join(varscan_run.out.join(lofreq_run.out.join(strelka_run.out.join(generatefinalbam.out))))))))
 	pindel(generatefinalbam.out)
 	cnvkit_run(generatefinalbam.out)
@@ -664,7 +682,7 @@ workflow MIPS {
 	coverview_report(coverview_run.out)
 	combine_variants(freebayes_run.out.join(platypus_run.out))
 	cava(somaticSeq_run.out)
-	mocha(somaticSeq_run.out)
+	//mocha(somaticSeq_run.out)
 	format_somaticseq_combined(somaticSeq_run.out)
 	format_concat_combine_somaticseq(format_somaticseq_combined.out)
 	format_pindel(pindel.out.join(coverage.out))
