@@ -593,6 +593,7 @@ process svaba {
 	${params.svaba_path} run -t ${bamFile} -G ${params.genome} -p 30 -k ${params.trans_bedfile}.bed -D ${params.site2} -a ${Sample}_svaba
 	${params.samtools} sort ${Sample}_svaba.contigs.bam -o ${Sample}_svaba.sortd.bam
 	${params.samtools} index ${Sample}_svaba.sortd.bam
+	cp ${Sample}_svaba.sortd.bam* $PWD/Final_Output/${Sample}/svaba/
 	"""
 }
 
@@ -657,37 +658,37 @@ workflow MIPS {
 	trimming_trimmomatic(samples_ch) | pair_assembly_pear | mapping_reads | sam_conversion
 	unpaird_mapping_reads(trimming_trimmomatic.out) | sam_conver_unpaired
 	//minimap_getitd(samples_ch)
-	//Mixcr_VDJ(samples_ch)
+	Mixcr_VDJ(samples_ch)
 	RealignerTargetCreator(sam_conversion.out)
 	IndelRealigner(RealignerTargetCreator.out.join(sam_conversion.out)) | BaseRecalibrator
 	PrintReads(IndelRealigner.out.join(BaseRecalibrator.out)) | generatefinalbam
 	hsmetrics_run(generatefinalbam.out)
 	InsertSizeMetrics(sam_conver_unpaired.out)
-	platypus_run(generatefinalbam.out)
+	//platypus_run(generatefinalbam.out)
 	coverage(generatefinalbam.out)
-	freebayes_run(generatefinalbam.out)
-	mutect2_run(generatefinalbam.out)
-	vardict_run(generatefinalbam.out)
-	varscan_run(generatefinalbam.out)
-	lofreq_run(generatefinalbam.out)
-	strelka_run(generatefinalbam.out)
+	//freebayes_run(generatefinalbam.out)
+	//mutect2_run(generatefinalbam.out)
+	//vardict_run(generatefinalbam.out)
+	//varscan_run(generatefinalbam.out)
+	//lofreq_run(generatefinalbam.out)
+	//strelka_run(generatefinalbam.out)
 	//gridss(generatefinalbam.out)
-	svaba(sam_conver_unpaired.out)
-	lumpy(samples_ch)
-	translocatn(svaba.out.join(lumpy.out))
-	somaticSeq_run(freebayes_run.out.join(platypus_run.out.join(mutect2_run.out.join(vardict_run.out.join(varscan_run.out.join(lofreq_run.out.join(strelka_run.out.join(generatefinalbam.out))))))))
-	pindel(generatefinalbam.out)
-	cnvkit_run(generatefinalbam.out)
-	coverview_run(generatefinalbam.out)
-	coverview_report(coverview_run.out)
-	combine_variants(freebayes_run.out.join(platypus_run.out))
-	cava(somaticSeq_run.out)
+	//svaba(sam_conver_unpaired.out)
+	//lumpy(samples_ch)
+	//translocatn(svaba.out.join(lumpy.out))
+	//somaticSeq_run(freebayes_run.out.join(platypus_run.out.join(mutect2_run.out.join(vardict_run.out.join(varscan_run.out.join(lofreq_run.out.join(strelka_run.out.join(generatefinalbam.out))))))))
+	//pindel(generatefinalbam.out)
+	//cnvkit_run(generatefinalbam.out)
+	//coverview_run(generatefinalbam.out)
+	//coverview_report(coverview_run.out)
+	//combine_variants(freebayes_run.out.join(platypus_run.out))
+	//cava(somaticSeq_run.out)
 	//mocha(somaticSeq_run.out)
-	format_somaticseq_combined(somaticSeq_run.out)
-	format_concat_combine_somaticseq(format_somaticseq_combined.out)
-	format_pindel(pindel.out.join(coverage.out))
-	merge_csv(format_concat_combine_somaticseq.out.join(cava.out.join(format_pindel.out.join(cnvkit_run.out))))
-	Final_Output(coverage.out)
+	//format_somaticseq_combined(somaticSeq_run.out)
+	//format_concat_combine_somaticseq(format_somaticseq_combined.out)
+	//format_pindel(pindel.out.join(coverage.out))
+	//merge_csv(format_concat_combine_somaticseq.out.join(cava.out.join(format_pindel.out.join(cnvkit_run.out))))
+	//Final_Output(coverage.out)
 	//remove_files(merge_csv.out.join(coverview_run.out.join(Final_Output.out)))
 }
 
