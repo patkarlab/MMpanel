@@ -180,9 +180,7 @@ process hsmetrics_run{
 	script:
 	"""
 	${params.java_path}/java -jar ${params.picard_path} CollectHsMetrics I= ${finalBam} O= ${Sample}_hsmetrics.txt BAIT_INTERVALS= ${params.bedfile}.interval_list TARGET_INTERVALS= ${params.bedfile}.interval_list R= ${params.genome} VALIDATION_STRINGENCY=LENIENT
-
 	${params.hsmetrics_all} $PWD/Final_Output/hsmetrics.tsv ${Sample} ${Sample}_hsmetrics.txt
-
 	"""
 }
 
@@ -660,7 +658,7 @@ workflow MIPS {
 	trimming_trimmomatic(samples_ch) | pair_assembly_pear | mapping_reads | sam_conversion
 	unpaird_mapping_reads(trimming_trimmomatic.out) | sam_conver_unpaired
 	//minimap_getitd(samples_ch)
-	Mixcr_VDJ(samples_ch)
+	//Mixcr_VDJ(samples_ch)
 	RealignerTargetCreator(sam_conversion.out)
 	IndelRealigner(RealignerTargetCreator.out.join(sam_conversion.out)) | BaseRecalibrator
 	PrintReads(IndelRealigner.out.join(BaseRecalibrator.out)) | generatefinalbam
