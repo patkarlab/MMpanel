@@ -31,6 +31,7 @@ echo "WARNING : change the bedfile and the cnv reference"
 #-resume -bg
 #conda deactivate 
 
+# For MM panel
 source activate new_base
 nextflow -c /home/pipelines/MMpanel/nextflow.config run main_mmpanel.nf -entry MIPS \
 --bedfile /home/pipelines/mutation_detector_nextflow/bedfile/myeloma_combined_tp53_nras_kras_sortd \
@@ -39,3 +40,14 @@ nextflow -c /home/pipelines/MMpanel/nextflow.config run main_mmpanel.nf -entry M
 --sequences /home/pipelines/MMpanel/sequences/ \
 --input /home/pipelines/MMpanel/samplesheet.csv \
 -resume -bg
+
+# For CNV myeloid panel
+#source activate new_base
+#nextflow -c /home/pipelines/MMpanel/nextflow.config run main_mmpanel.nf -entry MIPS \
+#--bedfile /home/pipelines/mutation_detector_nextflow/bedfile/CNV_Small_hg19_newmyeloid_sortd \
+#--trans_bedfile /home/pipelines/MMpanel/bedfiles/MMPanel_translocation_sortd \
+#--cnvkitRef /home/pipelines/MMpanel/scripts/cnvkit_cnvmyeloid/Reference_combpanel.cnn \
+#--gene_scatter_list /home/pipelines/MMpanel/scripts/cnvkit_cnvmyeloid \
+#--sequences /home/pipelines/MMpanel/sequences/ \
+#--input /home/pipelines/MMpanel/samplesheet.csv \
+#-resume -bg

@@ -11,6 +11,6 @@ do
 	#bedtools bamtobed -i /home/pipelines/MMpanel/Final_Output/${samples}/${samples}.sorted.bam > /home/pipelines/MMpanel/Final_Output/${samples}/${samples}.bed
     #bedtools coverage -counts -a /home/pipelines/MMpanel/bedfiles/MMPanel_translocation_sortd.bed -b /home/pipelines/MMpanel/Final_Output/${samples}/${samples}.bed > /home/pipelines/MMpanel/Final_Output/${samples}/${samples}.counts.bed
 
-	echo -ne ${samples}'\t'; grep -v '#' /home/pipelines/MMpanel/Final_Output/${samples}/${samples}_insert_size_metrics.txt	| awk 'BEGIN{FS=OFS="\t"}NR==3{ print $1}'
-	#echo -ne ${samples}'\t'; grep -v '#' /home/pipelines/MMpanel/Final_Output/${samples}/${samples}"_hsmetrics.txt" | awk 'BEGIN{FS="\t"; OFS="\t"}NR==3{ print $7,$8}'
+	#echo -ne ${samples}'\t'; grep -v '#' /home/pipelines/MMpanel/Final_Output/${samples}/${samples}_insert_size_metrics.txt	| awk 'BEGIN{FS=OFS="\t"}NR==3{ print $1}'
+	echo -ne ${samples}'\t'; grep -v '#' /home/pipelines/MMpanel/Final_Output/${samples}/${samples}"_hsmetrics.txt" | awk 'BEGIN{FS="\t"; OFS="\t"}NR==3{ print $7,$8}'
 done

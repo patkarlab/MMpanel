@@ -353,6 +353,20 @@ process platypus_run{
 	"""
 }
 
+process igv_reports {
+	input:
+		tuple val(Sample), file (somaticVcf), file (somaticseqMultianno)
+	output:
+		tuple val(Sample)
+	script:
+	"""
+	perl ${params.annovarLatest_path}/table_annovar.pl ${somaticVcf} --out ${Sample}.annovar --remove --protocol refGene,cytoBand,cosmic84,popfreq_all_20150413,avsnp150,intervar_20180118,1000g2015aug_all,clinvar_20170905 --operation g,r,f,f,f,f,f,f --buildver hg19 --nastring . --otherinfo --thread 10 ${params.annovarLatest_path}/humandb/ --xreffile ${params.annovarLatest_path}/example/gene_fullxref.txt -vcfinput
+
+	${params.igv_script} ${params.genome} ${Sample}.annovar.hg19_multianno.vcf $PWD/Final_Output/${Sample}/${Sample}.final.bam $PWD/Final_Output/${Sample}/${Sample}_igv.html
+
+	"""
+}
+
 process coverage {
 	publishDir "$PWD/${Sample}/coverage/", mode: 'copy', pattern: '*.counts.bed'
 	input:
@@ -569,6 +583,31 @@ process Mixcr_VDJ {
 	""" 
 }
 
+process IgCaller {
+	input:
+		tuple val (Sample), file (bamFile), file(bamBai)
+	output:
+		tuple val (Sample)
+	script:
+	"""
+	mkdir $PWD/Final_Output/${Sample}/IgCaller/
+	/home/pipelines/MMpanel/temp/igcaller.sh ${bamFile} ${params.genome} $PWD/Final_Output/${Sample}/IgCaller/
+	"""
+}
+
+process vdj_analysis {
+	maxForks 10
+	publishDir "$PWD/Final_Output/${Sample}/vidjil", mode: 'copy', pattern: '*'
+	input:
+		tuple val (Sample),	file (pairAssembled)
+	output:
+		tuple val (Sample), file ('*')
+	script:
+	""" 
+	${params.vidjil_path} ${pairAssembled} -r 20 -g ${params.vidjil_genome} -o ${Sample} --all --out-vdjfa
+	"""
+}
+
 process gridss {
 	errorStrategy 'ignore'
 	publishDir "$PWD/Final_Output/${Sample}/gridss/", mode: 'copy', pattern: '*'
@@ -593,6 +632,7 @@ process svaba {
 	${params.svaba_path} run -t ${bamFile} -G ${params.genome} -p 30 -k ${params.trans_bedfile}.bed -D ${params.site2} -a ${Sample}_svaba
 	${params.samtools} sort ${Sample}_svaba.contigs.bam -o ${Sample}_svaba.sortd.bam
 	${params.samtools} index ${Sample}_svaba.sortd.bam
+	mkdir $PWD/Final_Output/${Sample}/svaba/
 	cp ${Sample}_svaba.sortd.bam* $PWD/Final_Output/${Sample}/svaba/
 	"""
 }
@@ -643,6 +683,7 @@ process remove_files{
 	script:
 	"""
 	rm -rf ${PWD}/${Sample}/
+
 	"""
 }
 
@@ -655,31 +696,35 @@ workflow MIPS {
 		.set { samples_ch }
 	
 	main:
-	trimming_trimmomatic(samples_ch) | pair_assembly_pear | mapping_reads | sam_conversion
-	unpaird_mapping_reads(trimming_trimmomatic.out) | sam_conver_unpaired
+	trimming_trimmomatic(samples_ch) 
+	pair_assembly_pear(trimming_trimmomatic.out) | mapping_reads | sam_conversion
+	//unpaird_mapping_reads(trimming_trimmomatic.out) | sam_conver_unpaired
 	//minimap_getitd(samples_ch)
 	//Mixcr_VDJ(samples_ch)
-	RealignerTargetCreator(sam_conversion.out)
-	IndelRealigner(RealignerTargetCreator.out.join(sam_conversion.out)) | BaseRecalibrator
-	PrintReads(IndelRealigner.out.join(BaseRecalibrator.out)) | generatefinalbam
-	hsmetrics_run(generatefinalbam.out)
-	InsertSizeMetrics(sam_conver_unpaired.out)
+	//IgCaller(sam_conver_unpaired.out)
+	vdj_analysis(pair_assembly_pear.out)
+	//RealignerTargetCreator(sam_conversion.out)
+	//IndelRealigner(RealignerTargetCreator.out.join(sam_conversion.out)) | BaseRecalibrator
+	//PrintReads(IndelRealigner.out.join(BaseRecalibrator.out)) | generatefinalbam
+	//hsmetrics_run(generatefinalbam.out)
+	//InsertSizeMetrics(sam_conver_unpaired.out)
 	//platypus_run(generatefinalbam.out)
-	coverage(generatefinalbam.out)
+	//coverage(generatefinalbam.out)
 	//freebayes_run(generatefinalbam.out)
 	//mutect2_run(generatefinalbam.out)
 	//vardict_run(generatefinalbam.out)
 	//varscan_run(generatefinalbam.out)
 	//lofreq_run(generatefinalbam.out)
 	//strelka_run(generatefinalbam.out)
-	//gridss(generatefinalbam.out)
-	//svaba(sam_conver_unpaired.out)
-	//lumpy(samples_ch)
-	//translocatn(svaba.out.join(lumpy.out))
+	////gridss(generatefinalbam.out)
+	////svaba(sam_conver_unpaired.out)
+	////lumpy(samples_ch)
+	////translocatn(svaba.out.join(lumpy.out))
 	//somaticSeq_run(freebayes_run.out.join(platypus_run.out.join(mutect2_run.out.join(vardict_run.out.join(varscan_run.out.join(lofreq_run.out.join(strelka_run.out.join(generatefinalbam.out))))))))
 	//pindel(generatefinalbam.out)
+	//igv_reports(somaticSeq_run.out)
 	//cnvkit_run(generatefinalbam.out)
-	coverview_run(generatefinalbam.out)
+	//coverview_run(generatefinalbam.out)
 	//coverview_report(coverview_run.out)
 	//combine_variants(freebayes_run.out.join(platypus_run.out))
 	//cava(somaticSeq_run.out)
@@ -701,8 +746,9 @@ workflow MANTA {
 		.set { samples_ch }
 
 	main:
-	trimming_trimmomatic(samples_ch) | unpaird_mapping_reads | sam_conversion
-	InsertSizeMetrics(sam_conversion.out)
+	//trimming_trimmomatic(samples_ch) | pair_assembly_pear | mapping_reads | sam_conver_unpaired
+	trimming_trimmomatic(samples_ch) | unpaird_mapping_reads | sam_conver_unpaired
+	//InsertSizeMetrics(sam_conversion.out)
 	//RealignerTargetCreator(sam_conversion.out)
 	//IndelRealigner(RealignerTargetCreator.out.join(sam_conversion.out)) | BaseRecalibrator
 	//PrintReads(IndelRealigner.out.join(BaseRecalibrator.out)) | generatefinalbam
