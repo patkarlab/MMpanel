@@ -16,30 +16,35 @@
 ##for Twistlymphoid:/home/pipelines/mutation_detector_nextflow/bedfile/Leukemia_Bedfile_ALL_grch37hglft_genome_ucsc
 ##for combined_panel:/home/pipelines/mutation_detector_nextflow/bedfile/Leukemia_Panel_Myeloid_2023_Feb_hg37_sortd
 ##for multiple_myeloma:/home/pipelines/mutation_detector_nextflow/bedfile/myeloma_combined_sortd
+##for CLL-IGVH : no bedfile required
+##for multiple myeloma panel : --bedfile /home/pipelines/mutation_detector_nextflow/bedfile/myeloma_combined_tp53_nras_kras_sortd, --cnvkitRef /home/pipelines/NextSeq_mutation_detector_leukemia/scripts/cnvkit_mmpanel/Reference_combpanel.cnn
+##for CNV myeloid panel : --bedfile /home/pipelines/mutation_detector_nextflow/bedfile/CNV_Small_hg19_newmyeloid_sortd, --cnvkitRef /home/pipelines/MMpanel/scripts/cnvkit_cnvmyeloid/Reference_combpanel.cnn, --gene_scatter_list /home/pipelines/MMpanel/scripts/cnvkit_cnvmyeloid
+
+
 
 echo "WARNING : change the bedfile and the cnv reference"
 # for cnvkit reference 
 # 06112021_Leukemia_Panel_sorted.bed : "/home/pipelines/NextSeq_mutation_detector_leukemia/scripts/cnvkit_ref_GeneNames/Reference_labelled.cnn" 
 # Leukemia_Panel_Myeloid_2023_Feb_hg37_sortd.bed : "/home/pipelines/NextSeq_mutation_detector_leukemia/scripts/cnvkit_combpanel/Reference_combpanel.cnn"
 
-#source activate new_base
-#nextflow -c /home/pipelines/NextSeq_mutation_detector_leukemia/nextflow.config run test_nf_scripts/main_v5_acmg.nf -entry MIPS \
-#--bedfile /home/pipelines/mutation_detector_nextflow/bedfile/Leukemia_Panel_Myeloid_2023_Feb_hg37_sortd \
-#--cnvkitRef /home/pipelines/NextSeq_mutation_detector_leukemia/scripts/cnvkit_combpanel/Reference_combpanel.cnn \
-#--sequences /home/pipelines/NextSeq_mutation_detector_leukemia/sequences/ \
-#--input /home/pipelines/NextSeq_mutation_detector_leukemia/samplesheet.csv \
-#-resume -bg
-#conda deactivate 
-
-# For MM panel
 source activate new_base
-nextflow -c /home/pipelines/MMpanel/nextflow.config run main_mmpanel.nf -entry MIPS \
---bedfile /home/pipelines/mutation_detector_nextflow/bedfile/myeloma_combined_tp53_nras_kras_sortd \
---trans_bedfile /home/pipelines/MMpanel/bedfiles/MMPanel_translocation_sortd \
---cnvkitRef /home/pipelines/NextSeq_mutation_detector_leukemia/scripts/cnvkit_mmpanel/Reference_combpanel.cnn \
+nextflow -c /home/pipelines/NextSeq_mutation_detector_leukemia/nextflow.config run  main_mmpanel.nf -entry CLL \
+--bedfile /home/pipelines/mutation_detector_nextflow/bedfile/Leukemia_Panel_Myeloid_2023_Feb_hg37_sortd \
+--cnvkitRef /home/pipelines/NextSeq_mutation_detector_leukemia/scripts/cnvkit_combpanel/Reference_combpanel.cnn \
 --sequences /home/pipelines/MMpanel/sequences/ \
 --input /home/pipelines/MMpanel/samplesheet.csv \
 -resume -bg
+conda deactivate 
+
+# For MM panel
+#source activate new_base
+#nextflow -c /home/pipelines/MMpanel/nextflow.config run main_mmpanel.nf -entry MIPS \
+#--bedfile /home/pipelines/mutation_detector_nextflow/bedfile/myeloma_combined_tp53_nras_kras_sortd \
+#--trans_bedfile /home/pipelines/MMpanel/bedfiles/MMPanel_translocation_sortd \
+#--cnvkitRef /home/pipelines/NextSeq_mutation_detector_leukemia/scripts/cnvkit_mmpanel/Reference_combpanel.cnn \
+#--sequences /home/pipelines/MMpanel/sequences/ \
+#--input /home/pipelines/MMpanel/samplesheet.csv \
+#-resume -bg
 
 # For CNV myeloid panel
 #source activate new_base

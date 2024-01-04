@@ -697,12 +697,12 @@ workflow MIPS {
 	
 	main:
 	trimming_trimmomatic(samples_ch) 
-	pair_assembly_pear(trimming_trimmomatic.out) | mapping_reads | sam_conversion
-	//unpaird_mapping_reads(trimming_trimmomatic.out) | sam_conver_unpaired
+	//pair_assembly_pear(trimming_trimmomatic.out) | mapping_reads | sam_conversion
+	unpaird_mapping_reads(trimming_trimmomatic.out) | sam_conver_unpaired
 	//minimap_getitd(samples_ch)
 	//Mixcr_VDJ(samples_ch)
-	//IgCaller(sam_conver_unpaired.out)
-	vdj_analysis(pair_assembly_pear.out)
+	IgCaller(sam_conver_unpaired.out)
+	//vdj_analysis(pair_assembly_pear.out)
 	//RealignerTargetCreator(sam_conversion.out)
 	//IndelRealigner(RealignerTargetCreator.out.join(sam_conversion.out)) | BaseRecalibrator
 	//PrintReads(IndelRealigner.out.join(BaseRecalibrator.out)) | generatefinalbam
@@ -728,7 +728,7 @@ workflow MIPS {
 	//coverview_report(coverview_run.out)
 	//combine_variants(freebayes_run.out.join(platypus_run.out))
 	//cava(somaticSeq_run.out)
-	//mocha(somaticSeq_run.out)
+	////mocha(somaticSeq_run.out)
 	//format_somaticseq_combined(somaticSeq_run.out)
 	//format_concat_combine_somaticseq(format_somaticseq_combined.out)
 	//format_pindel(pindel.out.join(coverage.out))
@@ -752,6 +752,20 @@ workflow MANTA {
 	//RealignerTargetCreator(sam_conversion.out)
 	//IndelRealigner(RealignerTargetCreator.out.join(sam_conversion.out)) | BaseRecalibrator
 	//PrintReads(IndelRealigner.out.join(BaseRecalibrator.out)) | generatefinalbam
+}
+
+workflow CLL {
+	Channel
+		.fromPath(params.input)
+		.splitCsv(header:false)
+		.flatten()
+		.map{ it }
+		.set { samples_ch }
+	main:
+	trimming_trimmomatic(samples_ch)
+	pair_assembly_pear(trimming_trimmomatic.out)
+	Mixcr_VDJ(samples_ch)
+	vdj_analysis(pair_assembly_pear.out)	
 }
 
 workflow.onComplete {
