@@ -768,6 +768,47 @@ workflow CLL {
 	vdj_analysis(pair_assembly_pear.out)	
 }
 
+workflow CLL_IGVH {
+	Channel
+		.fromPath(params.input)
+		.splitCsv(header:false)
+		.flatten()
+		.map{ it }
+		.set { samples_ch }
+	
+	main:
+	trimming_trimmomatic(samples_ch)
+	pair_assembly_pear(trimming_trimmomatic.out) | mapping_reads | sam_conversion
+	vdj_analysis(pair_assembly_pear.out)
+	RealignerTargetCreator(sam_conversion.out)
+	IndelRealigner(RealignerTargetCreator.out.join(sam_conversion.out)) | BaseRecalibrator
+	PrintReads(IndelRealigner.out.join(BaseRecalibrator.out)) | generatefinalbam
+	hsmetrics_run(generatefinalbam.out)
+	platypus_run(generatefinalbam.out)
+	coverage(generatefinalbam.out)
+	freebayes_run(generatefinalbam.out)
+	mutect2_run(generatefinalbam.out)
+	vardict_run(generatefinalbam.out)
+	varscan_run(generatefinalbam.out)
+	lofreq_run(generatefinalbam.out)
+	strelka_run(generatefinalbam.out)	
+	somaticSeq_run(freebayes_run.out.join(platypus_run.out.join(mutect2_run.out.join(vardict_run.out.join(varscan_run.out.join(lofreq_run.out.join(strelka_run.out.join(generatefinalbam.out))))))))
+	pindel(generatefinalbam.out)
+	igv_reports(somaticSeq_run.out)
+	cnvkit_run(generatefinalbam.out)
+	coverview_run(generatefinalbam.out)
+	coverview_report(coverview_run.out)
+	combine_variants(freebayes_run.out.join(platypus_run.out))
+	cava(somaticSeq_run.out)
+	mocha(somaticSeq_run.out)
+	format_somaticseq_combined(somaticSeq_run.out)
+	format_concat_combine_somaticseq(format_somaticseq_combined.out)
+	format_pindel(pindel.out.join(coverage.out))
+	merge_csv(format_concat_combine_somaticseq.out.join(cava.out.join(format_pindel.out.join(cnvkit_run.out))))
+	Final_Output(coverage.out)
+	remove_files(merge_csv.out.join(coverview_run.out.join(Final_Output.out)))
+}
+
 workflow.onComplete {
 	log.info ( workflow.success ? "\n\nDone! Output in the 'Final_Output' directory \n" : "Oops .. something went wrong" )
 }
