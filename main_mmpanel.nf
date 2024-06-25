@@ -554,6 +554,30 @@ process merge_csv {
 	"""
 }
 
+process merge_csv_del_cnvkit {
+	input:
+		tuple val (Sample), file (cava_csv)
+	output:
+		tuple val (Sample), file ("output_temp.xlsx")
+	script:
+	"""
+	mkdir -p ${PWD}/${Sample}/cnvkit/
+	touch ${PWD}/${Sample}/cnvkit/${Sample}.final.cnr
+	sed -i 's/\t/,/g' ${PWD}/${Sample}/cnvkit/${Sample}.final.cnr
+	python3 ${params.pharma_marker_script} ${Sample} ${PWD}/${Sample}/Annovar_Modified/ ${params.pharma_input_xlxs} ${PWD}/${Sample}/${Sample}_pharma.csv
+	python3 ${params.merge_csvs_script} ${Sample} ${PWD}/${Sample}/Annovar_Modified/ ${PWD}/Final_Output/${Sample}/${Sample}.xlsx ${PWD}/${Sample}/CAVA/ ${PWD}/${Sample}/Coverview/${Sample}.coverview_regions.csv ${PWD}/${Sample}/pindel/${Sample}_final.pindel.csv ${PWD}/${Sample}/cnvkit/${Sample}.final.cnr ${PWD}/${Sample}/${Sample}_pharma.csv
+
+	cp ${PWD}/${Sample}/Annovar_Modified/${Sample}.final.concat.csv ${Sample}.final.concat_append.csv
+	${params.vep_script_path} ${PWD}/Final_Output/${Sample}/${Sample}.somaticseq.vcf ${PWD}/Final_Output/${Sample}/${Sample}
+	${params.vep_extract_path} ${Sample}.final.concat_append.csv ${PWD}/Final_Output/${Sample}/${Sample}_vep_delheaders.txt > ${Sample}.vep
+	${params.cancervar_extract} $PWD/${Sample}/${Sample}myanno.hg19_multianno.txt.cancervar.ensemble.pred ${Sample}.vep ${Sample}_cancervar.csv
+	
+	${params.pcgr_cpsr_script_path} ${PWD}/Final_Output/${Sample}/${Sample}.xlsx ${Sample}_cancervar.csv
+	cp output_temp.xlsx ${PWD}/Final_Output/${Sample}/${Sample}.xlsx
+	"""
+}
+
+
 process mocha {
 	publishDir "$PWD/Final_Output/${Sample}/MoChA/", mode: 'copy', pattern: '*.png'
 	publishDir "$PWD/Final_Output/${Sample}/MoChA/", mode: 'copy', pattern: '*.pdf'
@@ -697,44 +721,44 @@ workflow MIPS {
 	
 	main:
 	trimming_trimmomatic(samples_ch) 
-	//pair_assembly_pear(trimming_trimmomatic.out) | mapping_reads | sam_conversion
+	pair_assembly_pear(trimming_trimmomatic.out) | mapping_reads | sam_conversion
 	unpaird_mapping_reads(trimming_trimmomatic.out) | sam_conver_unpaired
-	//minimap_getitd(samples_ch)
+	minimap_getitd(samples_ch)
 	//Mixcr_VDJ(samples_ch)
-	IgCaller(sam_conver_unpaired.out)
+	//IgCaller(sam_conver_unpaired.out)
 	//vdj_analysis(pair_assembly_pear.out)
-	//RealignerTargetCreator(sam_conversion.out)
-	//IndelRealigner(RealignerTargetCreator.out.join(sam_conversion.out)) | BaseRecalibrator
-	//PrintReads(IndelRealigner.out.join(BaseRecalibrator.out)) | generatefinalbam
-	//hsmetrics_run(generatefinalbam.out)
-	//InsertSizeMetrics(sam_conver_unpaired.out)
-	//platypus_run(generatefinalbam.out)
-	//coverage(generatefinalbam.out)
-	//freebayes_run(generatefinalbam.out)
-	//mutect2_run(generatefinalbam.out)
-	//vardict_run(generatefinalbam.out)
-	//varscan_run(generatefinalbam.out)
-	//lofreq_run(generatefinalbam.out)
-	//strelka_run(generatefinalbam.out)
-	////gridss(generatefinalbam.out)
-	////svaba(sam_conver_unpaired.out)
-	////lumpy(samples_ch)
-	////translocatn(svaba.out.join(lumpy.out))
-	//somaticSeq_run(freebayes_run.out.join(platypus_run.out.join(mutect2_run.out.join(vardict_run.out.join(varscan_run.out.join(lofreq_run.out.join(strelka_run.out.join(generatefinalbam.out))))))))
-	//pindel(generatefinalbam.out)
-	//igv_reports(somaticSeq_run.out)
-	//cnvkit_run(generatefinalbam.out)
-	//coverview_run(generatefinalbam.out)
-	//coverview_report(coverview_run.out)
-	//combine_variants(freebayes_run.out.join(platypus_run.out))
-	//cava(somaticSeq_run.out)
-	////mocha(somaticSeq_run.out)
-	//format_somaticseq_combined(somaticSeq_run.out)
-	//format_concat_combine_somaticseq(format_somaticseq_combined.out)
-	//format_pindel(pindel.out.join(coverage.out))
-	//merge_csv(format_concat_combine_somaticseq.out.join(cava.out.join(format_pindel.out.join(cnvkit_run.out))))
-	//Final_Output(coverage.out)
-	//remove_files(merge_csv.out.join(coverview_run.out.join(Final_Output.out)))
+	RealignerTargetCreator(sam_conversion.out)
+	IndelRealigner(RealignerTargetCreator.out.join(sam_conversion.out)) | BaseRecalibrator
+	PrintReads(IndelRealigner.out.join(BaseRecalibrator.out)) | generatefinalbam
+	hsmetrics_run(generatefinalbam.out)
+	InsertSizeMetrics(sam_conver_unpaired.out)
+	platypus_run(generatefinalbam.out)
+	coverage(generatefinalbam.out)
+	freebayes_run(generatefinalbam.out)
+	mutect2_run(generatefinalbam.out)
+	vardict_run(generatefinalbam.out)
+	varscan_run(generatefinalbam.out)
+	lofreq_run(generatefinalbam.out)
+	strelka_run(generatefinalbam.out)
+	//gridss(generatefinalbam.out)
+	//svaba(sam_conver_unpaired.out)
+	//lumpy(samples_ch)
+	//translocatn(svaba.out.join(lumpy.out))
+	somaticSeq_run(freebayes_run.out.join(platypus_run.out.join(mutect2_run.out.join(vardict_run.out.join(varscan_run.out.join(lofreq_run.out.join(strelka_run.out.join(generatefinalbam.out))))))))
+	pindel(generatefinalbam.out)
+	igv_reports(somaticSeq_run.out)
+	cnvkit_run(generatefinalbam.out)
+	coverview_run(generatefinalbam.out)
+	coverview_report(coverview_run.out)
+	combine_variants(freebayes_run.out.join(platypus_run.out))
+	cava(somaticSeq_run.out)
+	mocha(somaticSeq_run.out)
+	format_somaticseq_combined(somaticSeq_run.out)
+	format_concat_combine_somaticseq(format_somaticseq_combined.out)
+	format_pindel(pindel.out.join(coverage.out))
+	merge_csv(format_concat_combine_somaticseq.out.join(cava.out.join(format_pindel.out.join(cnvkit_run.out))))
+	Final_Output(coverage.out)
+	remove_files(merge_csv.out.join(coverview_run.out.join(Final_Output.out)))
 }
 
 workflow MANTA {
@@ -795,18 +819,19 @@ workflow CLL_IGVH {
 	somaticSeq_run(freebayes_run.out.join(platypus_run.out.join(mutect2_run.out.join(vardict_run.out.join(varscan_run.out.join(lofreq_run.out.join(strelka_run.out.join(generatefinalbam.out))))))))
 	pindel(generatefinalbam.out)
 	igv_reports(somaticSeq_run.out)
-	cnvkit_run(generatefinalbam.out)
+	//cnvkit_run(generatefinalbam.out)
 	coverview_run(generatefinalbam.out)
 	coverview_report(coverview_run.out)
 	combine_variants(freebayes_run.out.join(platypus_run.out))
 	cava(somaticSeq_run.out)
-	mocha(somaticSeq_run.out)
+	//mocha(somaticSeq_run.out)
 	format_somaticseq_combined(somaticSeq_run.out)
 	format_concat_combine_somaticseq(format_somaticseq_combined.out)
 	format_pindel(pindel.out.join(coverage.out))
-	merge_csv(format_concat_combine_somaticseq.out.join(cava.out.join(format_pindel.out.join(cnvkit_run.out))))
+	//merge_csv(format_concat_combine_somaticseq.out.join(cava.out.join(format_pindel.out.join(cnvkit_run.out))))
+	merge_csv_del_cnvkit(format_concat_combine_somaticseq.out.join(cava.out.join(format_pindel.out)))
 	Final_Output(coverage.out)
-	remove_files(merge_csv.out.join(coverview_run.out.join(Final_Output.out)))
+	remove_files(merge_csv_del_cnvkit.out.join(coverview_run.out.join(Final_Output.out)))
 }
 
 workflow.onComplete {
