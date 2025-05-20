@@ -1,0 +1,6 @@
+# This file has commands used to obtain cnvkit reference for the CNV myeloid panel
+
+source activate cnvkit
+cnvkit.py target /home/pipelines/mutation_detector_nextflow/bedfile/CNV_Small_hg19_newmyeloid_sortd.bed -o targets.bed
+for i in `cat samples.dat`; do cnvkit.py coverage $i.bam targets.bed -o $i.targetcoverage.cnn; done
+cnvkit.py reference  *targetcoverage.cnn -f /home/reference_genomes/hg19_broad/hg19_all.fasta -o Reference_combpanel.cnn

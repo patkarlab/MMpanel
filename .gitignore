@@ -1,0 +1,14 @@
+lumpy/
+GRIDSS_check/
+fastqc/
+manta_vcf_tsv/
+sequences/
+svaba_vcf_tsv/
+temp/
+work/
+MM*/
+.nextflow.log*
+*.log
+Coverview/
+Final_Output*
+.nextflow/

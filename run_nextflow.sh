@@ -34,12 +34,12 @@ echo "WARNING : change the bedfile and the cnv reference"
 #conda deactivate 
 
 # For MM panel
-#source activate new_base
-#nextflow -c /home/pipelines/MMpanel/nextflow.config run main_mmpanel.nf -entry MIPS \
-#--bedfile /home/pipelines/mutation_detector_nextflow/bedfile/myeloma_combined_tp53_nras_kras_sortd \
-#--trans_bedfile /home/pipelines/MMpanel/bedfiles/MMPanel_translocation_sortd \
-#--cnvkitRef /home/pipelines/NextSeq_mutation_detector_leukemia/scripts/cnvkit_mmpanel/Reference_combpanel.cnn \
-#-resume -bg
+source activate new_base
+nextflow -c /home/pipelines/MMpanel/nextflow.config run main_mmpanel.nf -entry MIPS \
+--bedfile /home/pipelines/mutation_detector_nextflow/bedfile/myeloma_combined_tp53_nras_kras_sortd \
+--trans_bedfile /home/pipelines/MMpanel/bedfiles/MMPanel_translocation_sortd \
+--cnvkitRef /home/pipelines/NextSeq_mutation_detector_leukemia/scripts/cnvkit_mmpanel/Reference_combpanel.cnn \
+-resume -bg
 
 # For CNV myeloid panel
 #source activate new_base
@@ -53,8 +53,8 @@ echo "WARNING : change the bedfile and the cnv reference"
 
 #For CLL_IGVH
 #--bedfile /home/pipelines/MMpanel/bedfiles/IGVH_CNV_Small_tp53_nras_kras_sortd \
-source activate new_base
-nextflow -c /home/pipelines/MMpanel/nextflow.config run main_mmpanel.nf -entry CLL_IGVH \
---bedfile /home/pipelines/MMpanel/bedfiles/MMPanel_IGVH_tp53_nras_kras_sortd \
---cnvkitRef /home/pipelines/NextSeq_mutation_detector_leukemia/scripts/cnvkit_mmpanel/Reference_combpanel.cnn \
--resume -bg
+#source activate new_base
+#nextflow -c /home/pipelines/MMpanel/nextflow.config run main_mmpanel.nf -entry CLL \
+#--bedfile /home/pipelines/MMpanel/bedfiles/MMPanel_IGVH_tp53_nras_kras_sortd \
+#--cnvkitRef /home/pipelines/NextSeq_mutation_detector_leukemia/scripts/cnvkit_mmpanel/Reference_combpanel.cnn \
+#-resume -bg

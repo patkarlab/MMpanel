@@ -28,6 +28,17 @@ process trimming_trimmomatic {
 	"""
 }
 
+process trimming_igvh {
+	input:
+		tuple val (Sample), file(trim1), file(trim2)
+	output:
+		tuple val (Sample), file("*_trimmed_R1.fastq"). file("_trimmed_R2.fastq")
+	script:
+	"""
+	cutadapt -g GTAAAACGACGGCCAG -G TAATACGACTCACTATAGGG -o ${Sample}_trimmed_R1.fastq -p ${Sample}_trimmed_R2.fastq -m 20 ${trim1} ${trim2} 
+	"""
+}
+
 process minimap_getitd {
 	publishDir "$PWD/Final_Output/${Sample}/", mode: 'copy', pattern: '*_getitd'
 	input:
@@ -674,11 +685,11 @@ process lumpy {
 }
 
 process translocatn {
-	publishDir "$PWD/Final_Output/${Sample}/", mode: 'copy', pattern: '*translocatns*'	
+	publishDir "$PWD/Final_Output/${Sample}/translocatn", mode: 'copy', pattern: '*.tsv'	
 	input:
 		tuple val (Sample), file (svaba_vcf), file (lumpy_vcf)
 	output:
-		tuple val (Sample), file ("*")
+		tuple val (Sample), file ("*.tsv")
 	script:
 	"""
 	${params.svaba_lumpy_common} ${svaba_vcf} ${lumpy_vcf} ${Sample}_common
@@ -724,9 +735,9 @@ workflow MIPS {
 	pair_assembly_pear(trimming_trimmomatic.out) | mapping_reads | sam_conversion
 	unpaird_mapping_reads(trimming_trimmomatic.out) | sam_conver_unpaired
 	minimap_getitd(samples_ch)
-	//Mixcr_VDJ(samples_ch)
+	Mixcr_VDJ(samples_ch)
 	//IgCaller(sam_conver_unpaired.out)
-	//vdj_analysis(pair_assembly_pear.out)
+	vdj_analysis(pair_assembly_pear.out)
 	RealignerTargetCreator(sam_conversion.out)
 	IndelRealigner(RealignerTargetCreator.out.join(sam_conversion.out)) | BaseRecalibrator
 	PrintReads(IndelRealigner.out.join(BaseRecalibrator.out)) | generatefinalbam
@@ -741,9 +752,9 @@ workflow MIPS {
 	lofreq_run(generatefinalbam.out)
 	strelka_run(generatefinalbam.out)
 	//gridss(generatefinalbam.out)
-	//svaba(sam_conver_unpaired.out)
-	//lumpy(samples_ch)
-	//translocatn(svaba.out.join(lumpy.out))
+	svaba(sam_conver_unpaired.out)
+	lumpy(samples_ch)
+	translocatn(svaba.out.join(lumpy.out))
 	somaticSeq_run(freebayes_run.out.join(platypus_run.out.join(mutect2_run.out.join(vardict_run.out.join(varscan_run.out.join(lofreq_run.out.join(strelka_run.out.join(generatefinalbam.out))))))))
 	pindel(generatefinalbam.out)
 	igv_reports(somaticSeq_run.out)
@@ -787,9 +798,10 @@ workflow CLL {
 		.set { samples_ch }
 	main:
 	trimming_trimmomatic(samples_ch)
-	pair_assembly_pear(trimming_trimmomatic.out)
-	Mixcr_VDJ(samples_ch)
-	vdj_analysis(pair_assembly_pear.out)	
+	trimming_igvh(trimming_trimmomatic.out)
+	//pair_assembly_pear(trimming_igvh.out)
+	//Mixcr_VDJ(samples_ch)
+	//vdj_analysis(pair_assembly_pear.out)	
 }
 
 workflow CLL_IGVH {
