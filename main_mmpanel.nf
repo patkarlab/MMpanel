@@ -32,7 +32,7 @@ process trimming_igvh {
 	input:
 		tuple val (Sample), file(trim1), file(trim2)
 	output:
-		tuple val (Sample), file("*_trimmed_R1.fastq"). file("_trimmed_R2.fastq")
+		tuple val (Sample), file("*_trimmed_R1.fastq"), file("*_trimmed_R2.fastq")
 	script:
 	"""
 	cutadapt -g GTAAAACGACGGCCAG -G TAATACGACTCACTATAGGG -o ${Sample}_trimmed_R1.fastq -p ${Sample}_trimmed_R2.fastq -m 20 ${trim1} ${trim2} 
@@ -799,9 +799,9 @@ workflow CLL {
 	main:
 	trimming_trimmomatic(samples_ch)
 	trimming_igvh(trimming_trimmomatic.out)
-	//pair_assembly_pear(trimming_igvh.out)
-	//Mixcr_VDJ(samples_ch)
-	//vdj_analysis(pair_assembly_pear.out)	
+	pair_assembly_pear(trimming_igvh.out)
+	Mixcr_VDJ(samples_ch)
+	vdj_analysis(pair_assembly_pear.out)	
 }
 
 workflow CLL_IGVH {
